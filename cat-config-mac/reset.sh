@@ -25,16 +25,7 @@ rm -rf statedb
 
 echo "<<< DONE"
 
-# reset mongo
-if [[ "peer" != "$1" ]] then;
-    echo
-    echo "+ resetting mongo"
-    pushd .
-    source ${script_src}/reset_mongo.sh ${catapult_server_src}
-    popd
-    echo "<<< DONE"
-    echo
-fi
+
 
 # clear logs
 echo "+ clearing logs"
@@ -46,6 +37,19 @@ rm -rf logs
 echo "+ recreating resources"
 rm -rf $PWD/resources
 mkdir $PWD/resources
+
+# reset mongo
+function mongo_setup(){
+    if [[ "peer" != "$1" ]] then;
+        echo
+        echo "+ resetting mongo"
+        pushd .
+        source ${script_src}/reset_mongo.sh $2
+        popd
+        echo "<<< DONE"
+        echo
+    fi
+}
 
 function setup_existing() {
     local generation_hash=$(grep "private key:" $PWD/generation_hash.txt | sed -e 's/private key://g' | tr -d ' ')
@@ -81,7 +85,7 @@ while [[ 0 -ne $# ]]; do
             local catapult_server_src=$2
             local boot_key=$3
             local public_key=$4
-            
+            mongo_setup ${node_type} ${catapult_server_src}
             setup_local ${node_type} ${catapult_server_src} ${boot_key} ${public_key}
         ;;
         
@@ -90,6 +94,7 @@ while [[ 0 -ne $# ]]; do
             ## Copy nemesis seed
             ## Copy resource files (provide root dir instead of catapult-server)
             ## Ready to start with start.sh
+            mongo_setup ${node_type} ${catapult_server_src}
             setup_foundation
         ;;
         
@@ -102,7 +107,7 @@ while [[ 0 -ne $# ]]; do
             local catapult_server_src=$3
             local boot_key=$4
             local network_public_key=$5
-            
+            mongo_setup ${node_type} ${catapult_server_src}
             setup_existing ${node_type} ${template_name} ${catapult_server_src} ${boot_key} ${network_public_key}
             
         ;;
